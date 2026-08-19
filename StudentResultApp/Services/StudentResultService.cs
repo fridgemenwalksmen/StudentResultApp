@@ -12,7 +12,7 @@ namespace StudentResultApp.Services
             IDbContextFactory<ApplicationDbContext> contextFactory)
         {
             _contextFactory = contextFactory;
-        }
+        }//hello
 
         public async Task<List<StudentResult>> GetAllAsync()
         {
