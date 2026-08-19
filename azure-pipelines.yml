@@ -1,19 +1,69 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
 trigger:
 - Janco-Dev
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: 'ubuntu-latest'
+
+variables:
+  buildConfiguration: 'Release'
 
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+# ============================================================
+# Install .NET 10
+# ============================================================
+
+- task: UseDotNet@2
+  displayName: 'Install .NET 10'
+  inputs:
+    packageType: 'sdk'
+    version: '10.x'
+
+
+# ============================================================
+# Restore NuGet packages
+# ============================================================
+
+- task: DotNetCoreCLI@2
+  displayName: 'Restore NuGet packages'
+  inputs:
+    command: 'restore'
+    projects: '**/StudentResultApp.csproj'
+
+
+# ============================================================
+# Build
+# ============================================================
+
+- task: DotNetCoreCLI@2
+  displayName: 'Build StudentResultApp'
+  inputs:
+    command: 'build'
+    projects: '**/StudentResultApp.csproj'
+    arguments: '--configuration $(buildConfiguration) --no-restore'
+
+
+# ============================================================
+# Publish
+# ============================================================
+
+- task: DotNetCoreCLI@2
+  displayName: 'Publish StudentResultApp'
+  inputs:
+    command: 'publish'
+    projects: '**/StudentResultApp.csproj'
+    arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/publish'
+    zipAfterPublish: true
+
+
+# ============================================================
+# Deploy to Azure App Service
+# ============================================================
+
+- task: AzureWebApp@1
+  displayName: 'Deploy StudentResultApp to Azure'
+  inputs:
+    azureSubscription: 'test'
+    appType: 'webApp'
+    appName: 'Webapp'
+    package: '$(Build.ArtifactStagingDirectory)/publish/*.zip'
