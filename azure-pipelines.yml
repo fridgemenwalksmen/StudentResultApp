@@ -1,28 +1,59 @@
+# ============================================================
+# StudentResultApp - Azure DevOps CI/CD Pipeline
+# ============================================================
+
 trigger:
 - Janco-Dev
 
+# Use Microsoft-hosted Ubuntu build agent
 pool:
   vmImage: 'ubuntu-latest'
+
+# ============================================================
+# VARIABLES
+# ============================================================
 
 variables:
   buildConfiguration: 'Release'
 
+  # CHANGE THIS to the exact name of your Azure DevOps
+  # Azure Resource Manager service connection.
+  azureServiceConnection: 'Test'
+
+  # CHANGE THIS to the exact name of your Azure App Service.
+  azureWebAppName: 'Webapp'
+
+
+# ============================================================
+# PIPELINE
+# ============================================================
+
 steps:
 
-# ============================================================
-# Install .NET 10
-# ============================================================
+# ------------------------------------------------------------
+# 1. Install .NET 10
+# ------------------------------------------------------------
 
 - task: UseDotNet@2
-  displayName: 'Install .NET 10'
+  displayName: 'Install .NET 10 SDK'
   inputs:
     packageType: 'sdk'
     version: '10.x'
 
 
-# ============================================================
-# Restore NuGet packages
-# ============================================================
+# ------------------------------------------------------------
+# 2. Display .NET information
+# ------------------------------------------------------------
+
+- script: |
+    dotnet --version
+    dotnet --info
+  displayName: 'Check .NET SDK'
+
+
+# ------------------------------------------------------------
+# 3. Restore NuGet packages
+# ------------------------------------------------------------
 
 - task: DotNetCoreCLI@2
   displayName: 'Restore NuGet packages'
@@ -31,9 +62,9 @@ steps:
     projects: '**/StudentResultApp.csproj'
 
 
-# ============================================================
-# Build
-# ============================================================
+# ------------------------------------------------------------
+# 4. Build the application
+# ------------------------------------------------------------
 
 - task: DotNetCoreCLI@2
   displayName: 'Build StudentResultApp'
@@ -43,9 +74,9 @@ steps:
     arguments: '--configuration $(buildConfiguration) --no-restore'
 
 
-# ============================================================
-# Publish
-# ============================================================
+# ------------------------------------------------------------
+# 5. Publish the application
+# ------------------------------------------------------------
 
 - task: DotNetCoreCLI@2
   displayName: 'Publish StudentResultApp'
@@ -56,14 +87,26 @@ steps:
     zipAfterPublish: true
 
 
-# ============================================================
-# Deploy to Azure App Service
-# ============================================================
+# ------------------------------------------------------------
+# 6. Publish build artifact
+# ------------------------------------------------------------
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish StudentResultApp artifact'
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)/publish'
+    ArtifactName: 'StudentResultApp'
+    publishLocation: 'Container'
+
+
+# ------------------------------------------------------------
+# 7. Deploy to Azure App Service
+# ------------------------------------------------------------
 
 - task: AzureWebApp@1
-  displayName: 'Deploy StudentResultApp to Azure'
+  displayName: 'Deploy StudentResultApp to Azure App Service'
   inputs:
-    azureSubscription: 'test'
+    azureSubscription: '$(azureServiceConnection)'
     appType: 'webApp'
-    appName: 'Webapp'
+    appName: '$(azureWebAppName)'
     package: '$(Build.ArtifactStagingDirectory)/publish/*.zip'
