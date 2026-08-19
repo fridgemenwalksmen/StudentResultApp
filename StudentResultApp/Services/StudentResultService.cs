@@ -24,7 +24,7 @@ namespace StudentResultApp.Services
                 .AsNoTracking()
                 .OrderBy(r => r.StudentNumber)
                 .ToListAsync();
-        }
+        }//hello
 
         public async Task AddAsync(StudentResult studentResult)
         {
